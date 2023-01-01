@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -12,72 +13,59 @@ import (
 	"github.com/lib/pq"
 )
 
-var (
-	ExpenseWithIDJSON = `{
-		"id": 1,
-		"title": "title",
-		"amount": 1,
-		"note": "note",
-		"tags": [
-			"tag1",
-			"tag2"
-		]
-	}`
-	BadExpenseJSON = `{
-		"title": "title",
-		"amount": A,
-		"note": "note",
-		"tags": [
-			"tag1",
-			"tag2"
-		]
-	}`
-	GoodExpenseJSON = `{
-		"title": "title",
-		"amount": 1,
-		"note": "note",
-		"tags": [
-			"tag1",
-			"tag2"
-		]
-	}`
-)
-
-func TestCreateExpenseHandler(t *testing.T) {
-	t.Run("Create expense should be success", func(t *testing.T) {
+func TestUpdateExpenseHandler(t *testing.T) {
+	t.Run("Update expense should be success", func(t *testing.T) {
+		exp := Expense{
+			ID:     1,
+			Title:  "title",
+			Amount: 1,
+			Note:   "note",
+			Tags:   []string{"tag1", "tag2"},
+		}
 		//Mock Database
 		var mock sqlmock.Sqlmock
 		var err error
-		db, mock, err = sqlmock.New()
+		db, mock, err = sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
 		defer db.Close()
-		mock.ExpectQuery("INSERT INTO expenses").
-			WithArgs("title", 1.0, "note", pq.Array([]string{"tag1", "tag2"})).
-			WillReturnRows(sqlmock.NewRows([]string{"id"}).FromCSVString("1"))
+		mock.ExpectPrepare("UPDATE expenses SET title=$2, amount=$3, note=$4, tags=$5 WHERE id = $1").
+			ExpectExec().
+			WithArgs(exp.ID, exp.Title, exp.Amount, exp.Note, pq.Array(exp.Tags)).
+			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		//Mock Echo Context
 		e := echo.New()
-		req := httptest.NewRequest(http.MethodPost, "/expenses", strings.NewReader(GoodExpenseJSON))
+		req := httptest.NewRequest(http.MethodPost, "/expenses/3", strings.NewReader(GoodExpenseJSON))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
+		c.SetParamNames("id")
+		c.SetParamValues(strconv.Itoa(exp.ID))
 
-		if err = CreateExpenseHandler(c); err != nil {
+		if err = UpdateExpenseHandler(c); err != nil {
 			t.Errorf("should not return error but it got %v", err)
+		}
+
+		resp := rec.Body.String()
+		want := `{"id":1,"title":"title","amount":1,"note":"note","tags":["tag1","tag2"]}` + "\n"
+		if resp != want {
+			t.Errorf("response error was not expected got: %s", resp)
 		}
 	})
 
-	t.Run("Create expense with invalid ID should got error", func(t *testing.T) {
+	t.Run("Update expense with invalid ID should got error", func(t *testing.T) {
 		//Mock Echo Context
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodPost, "/expenses", strings.NewReader(ExpenseWithIDJSON))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
+		c.SetParamNames("id")
+		c.SetParamValues("a")
 
-		err := CreateExpenseHandler(c)
+		err := UpdateExpenseHandler(c)
 		if err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
@@ -91,15 +79,17 @@ func TestCreateExpenseHandler(t *testing.T) {
 			t.Errorf("response error was not expected got: %s", resp)
 		}
 	})
-	t.Run("Create expense bad request should be fail", func(t *testing.T) {
+	t.Run("Update expense bad request should be fail", func(t *testing.T) {
 		//Mock Echo Context
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodPost, "/expenses", strings.NewReader(BadExpenseJSON))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
+		c.SetParamNames("id")
+		c.SetParamValues(strconv.Itoa(3))
 
-		err := CreateExpenseHandler(c)
+		err := UpdateExpenseHandler(c)
 		if err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
@@ -114,27 +104,37 @@ func TestCreateExpenseHandler(t *testing.T) {
 		}
 	})
 
-	t.Run("Create expense with should be fail", func(t *testing.T) {
+	t.Run("Update expense and database loss should be fail", func(t *testing.T) {
+		exp := Expense{
+			ID:     1,
+			Title:  "title",
+			Amount: 1,
+			Note:   "note",
+			Tags:   []string{"tag1", "tag2"},
+		}
 		//Mock Database
 		var mock sqlmock.Sqlmock
 		var err error
-		db, mock, err = sqlmock.New()
+		db, mock, err = sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
 		defer db.Close()
-		mock.ExpectQuery("INSERT INTO expenses").
-			WithArgs("title", 1.0, "note", pq.Array([]string{"tag1", "tag2"})).
+		mock.ExpectPrepare("UPDATE expenses SET title=$2, amount=$3, note=$4, tags=$5 WHERE id = $1").
+			ExpectExec().
+			WithArgs(exp.ID, exp.Title, exp.Amount, exp.Note, pq.Array(exp.Tags)).
 			WillReturnError(sql.ErrConnDone)
 
 		//Mock Echo Context
 		e := echo.New()
-		req := httptest.NewRequest(http.MethodPost, "/expenses", strings.NewReader(GoodExpenseJSON))
+		req := httptest.NewRequest(http.MethodPost, "/expenses/3", strings.NewReader(GoodExpenseJSON))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
+		c.SetParamNames("id")
+		c.SetParamValues(strconv.Itoa(exp.ID))
 
-		err = CreateExpenseHandler(c)
+		err = UpdateExpenseHandler(c)
 		if err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}

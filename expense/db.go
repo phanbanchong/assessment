@@ -49,7 +49,20 @@ func CreateExpense(db *sql.DB, exp Expense) (Expense, error) {
 	row := db.QueryRow("INSERT INTO expenses (title, amount, note, tags) values ($1, $2, $3, $4) RETURNING id", exp.Title, exp.Amount, exp.Note, pq.Array(exp.Tags))
 	err := row.Scan(&exp.ID)
 	if err != nil {
-		log.Errorf("Error insert expense error: %v", err)
+		log.Errorf("Insert expense error: %v", err)
+		return exp, err
+	}
+	return exp, nil
+}
+
+func UpdateExpense(db *sql.DB, exp Expense) (Expense, error) {
+	stmt, err := db.Prepare("UPDATE expenses SET title=$2, amount=$3, note=$4, tags=$5 WHERE id = $1")
+	if err != nil {
+		return exp, err
+	}
+
+	if _, err := stmt.Exec(exp.ID, exp.Title, exp.Amount, exp.Note, pq.Array(exp.Tags)); err != nil {
+		log.Errorf("Update expense error: %v", err)
 		return exp, err
 	}
 	return exp, nil
