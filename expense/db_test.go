@@ -87,3 +87,35 @@ func TestGetExpense(t *testing.T) {
 		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }
+
+func TestUpdateExpense(t *testing.T) {
+	exp := Expense{
+		ID:     3,
+		Title:  "title",
+		Amount: 3.0,
+		Note:   "note",
+		Tags:   []string{"tag1", "tag2"},
+	}
+	db = &sql.DB{}
+	//db, mock, err := sqlmock.New()
+	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	mock.ExpectPrepare("UPDATE expenses SET title=$2, amount=$3, note=$4, tags=$5 WHERE id = $1").
+		ExpectExec().
+		WithArgs(exp.ID, exp.Title, exp.Amount, exp.Note, pq.Array(exp.Tags)).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	// Now we execute our method
+	if _, err = UpdateExpense(db, exp); err != nil {
+		t.Errorf("error was not expected while select expense: %s", err)
+	}
+
+	// Make sure that all expectations were met
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
