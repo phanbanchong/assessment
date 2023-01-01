@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
@@ -12,12 +13,21 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
-	"github.com/phanbanchong/assessment/db"
+	"github.com/phanbanchong/assessment/expense"
 	"github.com/phanbanchong/assessment/health"
 )
 
+func ContextDB(db *sql.DB) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.Set("db", db)
+			return next(c)
+		}
+	}
+}
+
 func main() {
-	db.InitDB()
+	expense.InitDB()
 	e := echo.New()
 	e.Logger.SetLevel(log.INFO)
 
@@ -25,6 +35,7 @@ func main() {
 	e.Use(middleware.Recover())
 
 	e.GET("/health", health.GetHealthHandler)
+	e.POST("/expenses", expense.CreateExpenseHandler)
 
 	go func() {
 		if err := e.Start(fmt.Sprintf(":%s", os.Getenv("PORT"))); err != nil && err != http.ErrServerClosed {
