@@ -1,6 +1,7 @@
 package expense
 
 import (
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -68,19 +69,7 @@ func TestCreateExpenseHandler(t *testing.T) {
 		}
 	})
 
-	t.Run("Create expense with ID should be fail", func(t *testing.T) {
-		//Mock Database
-		var mock sqlmock.Sqlmock
-		var err error
-		db, mock, err = sqlmock.New()
-		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-		}
-		defer db.Close()
-		mock.ExpectQuery("INSERT INTO expenses").
-			WithArgs("title", 1.0, "note", pq.Array([]string{"tag1", "tag2"})).
-			WillReturnRows(sqlmock.NewRows([]string{"id"}).FromCSVString("1"))
-
+	t.Run("Create expense with invalid ID should got error", func(t *testing.T) {
 		//Mock Echo Context
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodPost, "/expenses", strings.NewReader(ExpenseWithIDJSON))
@@ -88,15 +77,44 @@ func TestCreateExpenseHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		err = CreateExpenseHandler(c)
+		err := CreateExpenseHandler(c)
 		if err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
 		if c.Response().Status != http.StatusBadRequest {
 			t.Errorf("should status bed request but it got %v", c.Response().Status)
 		}
+
+		resp := rec.Body.String()
+		want := `{"message":"Field ID is invalid"}` + "\n"
+		if resp != want {
+			t.Errorf("response error was not expected got: %s", resp)
+		}
 	})
 	t.Run("Create expense bad request should be fail", func(t *testing.T) {
+		//Mock Echo Context
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodPost, "/expenses", strings.NewReader(BadExpenseJSON))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		err := CreateExpenseHandler(c)
+		if err != nil {
+			t.Errorf("should not return error but it got %v", err)
+		}
+		if c.Response().Status != http.StatusBadRequest {
+			t.Errorf("should status bed request but it got %v", c.Response().Status)
+		}
+
+		resp := rec.Body.String()
+		want := `{"message":"code=400, message=Syntax error: offset=35, error=invalid character 'A' looking for beginning of value, internal=invalid character 'A' looking for beginning of value"}` + "\n"
+		if resp != want {
+			t.Errorf("response error was not expected got: %s", resp)
+		}
+	})
+
+	t.Run("Create expense with should be fail", func(t *testing.T) {
 		//Mock Database
 		var mock sqlmock.Sqlmock
 		var err error
@@ -107,11 +125,11 @@ func TestCreateExpenseHandler(t *testing.T) {
 		defer db.Close()
 		mock.ExpectQuery("INSERT INTO expenses").
 			WithArgs("title", 1.0, "note", pq.Array([]string{"tag1", "tag2"})).
-			WillReturnRows(sqlmock.NewRows([]string{"id"}).FromCSVString("1"))
+			WillReturnError(sql.ErrConnDone)
 
 		//Mock Echo Context
 		e := echo.New()
-		req := httptest.NewRequest(http.MethodPost, "/expenses", strings.NewReader(BadExpenseJSON))
+		req := httptest.NewRequest(http.MethodPost, "/expenses", strings.NewReader(GoodExpenseJSON))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -122,6 +140,12 @@ func TestCreateExpenseHandler(t *testing.T) {
 		}
 		if c.Response().Status != http.StatusBadRequest {
 			t.Errorf("should status bed request but it got %v", c.Response().Status)
+		}
+
+		resp := rec.Body.String()
+		want := `{"message":"sql: connection is already closed"}` + "\n"
+		if resp != want {
+			t.Errorf("response error was not expected got: %s", resp)
 		}
 	})
 }
