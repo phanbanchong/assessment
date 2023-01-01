@@ -35,6 +35,8 @@ func main() {
 	e.Use(middleware.Recover())
 
 	e.GET("/health", health.GetHealthHandler)
+
+	e.GET("/expenses/:id", expense.GetExpenseHandler)
 	e.POST("/expenses", expense.CreateExpenseHandler)
 
 	go func() {
