@@ -67,3 +67,26 @@ func UpdateExpense(db *sql.DB, exp Expense) (Expense, error) {
 	}
 	return exp, nil
 }
+
+func GetExpenses(db *sql.DB) ([]Expense, error) {
+	expenses := []Expense{}
+	stmt, err := db.Prepare("SELECT id, title, amount, note, tags FROM expenses ORDER BY id ASC")
+	if err != nil {
+		return expenses, err
+	}
+
+	rows, err := stmt.Query()
+	if err != nil {
+		return expenses, err
+	}
+
+	for rows.Next() {
+		expense := Expense{}
+		err := rows.Scan(&expense.ID, &expense.Title, &expense.Amount, &expense.Note, pq.Array(&expense.Tags))
+		if err != nil {
+			return expenses, err
+		}
+		expenses = append(expenses, expense)
+	}
+	return expenses, nil
+}

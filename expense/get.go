@@ -24,5 +24,13 @@ func GetExpenseHandler(c echo.Context) error {
 	default:
 		return c.JSON(http.StatusInternalServerError, Error{Message: "Unable to scan expense:" + err.Error()})
 	}
+}
 
+func GetExpensesHandler(c echo.Context) error {
+	expenses, err := GetExpenses(db)
+	if err != nil {
+		log.Errorf("Unable to get expenses from db:" + err.Error())
+		return c.JSON(http.StatusInternalServerError, Error{Message: "Unable to get expenses from database:" + err.Error()})
+	}
+	return c.JSON(http.StatusOK, expenses)
 }
