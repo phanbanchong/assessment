@@ -27,7 +27,10 @@ func ContextDB(db *sql.DB) echo.MiddlewareFunc {
 }
 
 func main() {
-	db := expense.InitDB()
+	db, err := expense.InitDB()
+	if err != nil {
+		log.Fatal("Unable to initialze database")
+	}
 	h := expense.NewApplication(db)
 	e := echo.New()
 	e.Logger.SetLevel(log.INFO)

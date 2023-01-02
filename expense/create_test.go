@@ -1,5 +1,4 @@
 //go:build unit
-// +build unit
 
 package expense
 
@@ -49,9 +48,7 @@ var (
 func TestCreateExpenseHandler(t *testing.T) {
 	t.Run("Create expense should be success", func(t *testing.T) {
 		//Mock Database
-		var mock sqlmock.Sqlmock
-		var err error
-		db, mock, err = sqlmock.New()
+		db, mock, err := sqlmock.New()
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -60,6 +57,7 @@ func TestCreateExpenseHandler(t *testing.T) {
 			WithArgs("title", 1.0, "note", pq.Array([]string{"tag1", "tag2"})).
 			WillReturnRows(sqlmock.NewRows([]string{"id"}).FromCSVString("1"))
 
+		h := NewApplication(db)
 		//Mock Echo Context
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodPost, "/expenses", strings.NewReader(GoodExpenseJSON))
@@ -67,12 +65,13 @@ func TestCreateExpenseHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		if err = CreateExpenseHandler(c); err != nil {
+		if err = h.CreateExpenseHandler(c); err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
 	})
 
 	t.Run("Create expense with invalid ID should got error", func(t *testing.T) {
+		h := NewApplication(nil)
 		//Mock Echo Context
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodPost, "/expenses", strings.NewReader(ExpenseWithIDJSON))
@@ -80,7 +79,7 @@ func TestCreateExpenseHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		err := CreateExpenseHandler(c)
+		err := h.CreateExpenseHandler(c)
 		if err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
@@ -95,6 +94,7 @@ func TestCreateExpenseHandler(t *testing.T) {
 		}
 	})
 	t.Run("Create expense bad request should be fail", func(t *testing.T) {
+		h := NewApplication(nil)
 		//Mock Echo Context
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodPost, "/expenses", strings.NewReader(BadExpenseJSON))
@@ -102,7 +102,7 @@ func TestCreateExpenseHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		err := CreateExpenseHandler(c)
+		err := h.CreateExpenseHandler(c)
 		if err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
@@ -119,9 +119,7 @@ func TestCreateExpenseHandler(t *testing.T) {
 
 	t.Run("Create expense with should be fail", func(t *testing.T) {
 		//Mock Database
-		var mock sqlmock.Sqlmock
-		var err error
-		db, mock, err = sqlmock.New()
+		db, mock, err := sqlmock.New()
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -129,6 +127,7 @@ func TestCreateExpenseHandler(t *testing.T) {
 		mock.ExpectQuery("INSERT INTO expenses").
 			WithArgs("title", 1.0, "note", pq.Array([]string{"tag1", "tag2"})).
 			WillReturnError(sql.ErrConnDone)
+		h := NewApplication(db)
 
 		//Mock Echo Context
 		e := echo.New()
@@ -137,7 +136,7 @@ func TestCreateExpenseHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		err = CreateExpenseHandler(c)
+		err = h.CreateExpenseHandler(c)
 		if err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
