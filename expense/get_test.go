@@ -1,3 +1,6 @@
+//go:build unit
+// +build unit
+
 package expense
 
 import (
@@ -50,8 +53,8 @@ func TestGetExpenseHandler(t *testing.T) {
 		if resp != want {
 			t.Errorf("response error was not expected got: %s", resp)
 		}
-
 	})
+
 	t.Run("Get expense by ID and ErrNoRows should got error", func(t *testing.T) {
 		//Mock Database
 		ID := 2
@@ -87,6 +90,7 @@ func TestGetExpenseHandler(t *testing.T) {
 			t.Errorf("response error was not expected got: %s", resp)
 		}
 	})
+
 	t.Run("Get expense by ID anoter error from database should got error", func(t *testing.T) {
 		//Mock Database
 		ID := 2
@@ -122,6 +126,7 @@ func TestGetExpenseHandler(t *testing.T) {
 			t.Errorf("response error was not expected got: %s", resp)
 		}
 	})
+
 	t.Run("Get expense by invalid ID should got error", func(t *testing.T) {
 		//Mock Echo Context
 		e := echo.New()
@@ -178,6 +183,7 @@ func TestGetExpenseHandler(t *testing.T) {
 			t.Errorf("response error was not expected got: %s", resp)
 		}
 	})
+
 	t.Run("Get all expense should got error", func(t *testing.T) {
 		//Mock Database
 		var mock sqlmock.Sqlmock
