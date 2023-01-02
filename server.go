@@ -27,7 +27,8 @@ func ContextDB(db *sql.DB) echo.MiddlewareFunc {
 }
 
 func main() {
-	expense.InitDB()
+	db := expense.InitDB()
+	h := expense.NewApplication(db)
 	e := echo.New()
 	e.Logger.SetLevel(log.INFO)
 
@@ -36,16 +37,16 @@ func main() {
 
 	e.GET("/health", health.GetHealthHandler)
 
-	e.GET("/expenses", expense.GetExpensesHandler)
-	e.GET("/expenses/:id", expense.GetExpenseHandler)
-	e.POST("/expenses", expense.CreateExpenseHandler)
-	e.PUT("/expenses/:id", expense.UpdateExpenseHandler)
+	e.GET("/expenses", h.GetExpensesHandler)
+	e.GET("/expenses/:id", h.GetExpenseHandler)
+	e.POST("/expenses", h.CreateExpenseHandler)
+	e.PUT("/expenses/:id", h.UpdateExpenseHandler)
 
-	go func() {
+	go func(e *echo.Echo) {
 		if err := e.Start(fmt.Sprintf(":%s", os.Getenv("PORT"))); err != nil && err != http.ErrServerClosed {
 			e.Logger.Fatal("Shutting down the server")
 		}
-	}()
+	}(e)
 
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGINT)

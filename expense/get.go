@@ -9,13 +9,13 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-func GetExpenseHandler(c echo.Context) error {
+func (h *handler) GetExpenseHandler(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Errorf("error: %v", err)
 		return c.JSON(http.StatusInternalServerError, Error{Message: "ID is invalid"})
 	}
-	exp, err := GetExpenseByID(db, id)
+	exp, err := GetExpenseByID(h.DB, id)
 	switch err {
 	case sql.ErrNoRows:
 		return c.JSON(http.StatusNotFound, Error{Message: "Expense not found"})
@@ -26,8 +26,8 @@ func GetExpenseHandler(c echo.Context) error {
 	}
 }
 
-func GetExpensesHandler(c echo.Context) error {
-	expenses, err := GetExpenses(db)
+func (h *handler) GetExpensesHandler(c echo.Context) error {
+	expenses, err := GetExpenses(h.DB)
 	if err != nil {
 		log.Errorf("Unable to get expenses from db:" + err.Error())
 		return c.JSON(http.StatusInternalServerError, Error{Message: "Unable to get expenses from database:" + err.Error()})

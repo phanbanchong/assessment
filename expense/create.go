@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func CreateExpenseHandler(c echo.Context) error {
+func (h *handler) CreateExpenseHandler(c echo.Context) error {
 	exp := Expense{}
 	err := c.Bind(&exp)
 	if exp.ID != 0 {
@@ -16,7 +16,7 @@ func CreateExpenseHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Error{Message: err.Error()})
 	}
 
-	exp, err = CreateExpense(db, exp)
+	exp, err = CreateExpense(h.DB, exp)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Error{Message: err.Error()})
 	}

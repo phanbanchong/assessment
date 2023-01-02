@@ -9,12 +9,8 @@ import (
 	"github.com/lib/pq"
 )
 
-var db *sql.DB
-
 func InitDB() *sql.DB {
-	var err error
-
-	db, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatal("Connection to database error", err)
 	}
