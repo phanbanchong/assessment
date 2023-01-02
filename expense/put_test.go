@@ -37,7 +37,7 @@ func TestUpdateExpenseHandler(t *testing.T) {
 
 		//Mock Echo Context
 		e := echo.New()
-		req := httptest.NewRequest(http.MethodPost, "/expenses/3", strings.NewReader(GoodExpenseJSON))
+		req := httptest.NewRequest(http.MethodPut, "/expenses/3", strings.NewReader(GoodExpenseJSON))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -58,7 +58,7 @@ func TestUpdateExpenseHandler(t *testing.T) {
 	t.Run("Update expense with invalid ID should got error", func(t *testing.T) {
 		//Mock Echo Context
 		e := echo.New()
-		req := httptest.NewRequest(http.MethodPost, "/expenses", strings.NewReader(ExpenseWithIDJSON))
+		req := httptest.NewRequest(http.MethodPut, "/expenses", strings.NewReader(ExpenseWithIDJSON))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -82,7 +82,7 @@ func TestUpdateExpenseHandler(t *testing.T) {
 	t.Run("Update expense bad request should be fail", func(t *testing.T) {
 		//Mock Echo Context
 		e := echo.New()
-		req := httptest.NewRequest(http.MethodPost, "/expenses", strings.NewReader(BadExpenseJSON))
+		req := httptest.NewRequest(http.MethodPut, "/expenses", strings.NewReader(BadExpenseJSON))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -127,7 +127,7 @@ func TestUpdateExpenseHandler(t *testing.T) {
 
 		//Mock Echo Context
 		e := echo.New()
-		req := httptest.NewRequest(http.MethodPost, "/expenses/3", strings.NewReader(GoodExpenseJSON))
+		req := httptest.NewRequest(http.MethodPut, "/expenses/3", strings.NewReader(GoodExpenseJSON))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)

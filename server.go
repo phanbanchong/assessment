@@ -36,6 +36,7 @@ func main() {
 
 	e.GET("/health", health.GetHealthHandler)
 
+	e.GET("/expenses", expense.GetExpensesHandler)
 	e.GET("/expenses/:id", expense.GetExpenseHandler)
 	e.POST("/expenses", expense.CreateExpenseHandler)
 	e.PUT("/expenses/:id", expense.UpdateExpenseHandler)
