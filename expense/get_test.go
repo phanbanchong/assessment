@@ -1,5 +1,4 @@
 //go:build unit
-// +build unit
 
 package expense
 
@@ -19,13 +18,12 @@ func TestGetExpenseHandler(t *testing.T) {
 	t.Run("Get expense by ID should be success", func(t *testing.T) {
 		//Mock Database
 		ID := 2
-		var mock sqlmock.Sqlmock
-		var err error
-		db, mock, err = sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
 		defer db.Close()
+		h := NewApplication(db)
 
 		mockRows := sqlmock.NewRows([]string{"id", "title", "amount", "note", "tags"}).
 			AddRow(2, "expense 2", 2.0, "note 2", pq.Array([]string{"tag1", "tag2"}))
@@ -44,7 +42,7 @@ func TestGetExpenseHandler(t *testing.T) {
 		c.SetParamNames("id")
 		c.SetParamValues(strconv.Itoa(ID))
 
-		if err = GetExpenseHandler(c); err != nil {
+		if err = h.GetExpenseHandler(c); err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
 
@@ -58,9 +56,7 @@ func TestGetExpenseHandler(t *testing.T) {
 	t.Run("Get expense by ID and ErrNoRows should got error", func(t *testing.T) {
 		//Mock Database
 		ID := 2
-		var mock sqlmock.Sqlmock
-		var err error
-		db, mock, err = sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -70,6 +66,7 @@ func TestGetExpenseHandler(t *testing.T) {
 			ExpectQuery().
 			WithArgs(ID).
 			WillReturnError(sql.ErrNoRows)
+		h := NewApplication(db)
 
 		//Mock Echo Context
 		e := echo.New()
@@ -80,7 +77,7 @@ func TestGetExpenseHandler(t *testing.T) {
 		c.SetParamNames("id")
 		c.SetParamValues(strconv.Itoa(ID))
 
-		if err = GetExpenseHandler(c); err != nil {
+		if err = h.GetExpenseHandler(c); err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
 
@@ -94,9 +91,7 @@ func TestGetExpenseHandler(t *testing.T) {
 	t.Run("Get expense by ID anoter error from database should got error", func(t *testing.T) {
 		//Mock Database
 		ID := 2
-		var mock sqlmock.Sqlmock
-		var err error
-		db, mock, err = sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -107,6 +102,8 @@ func TestGetExpenseHandler(t *testing.T) {
 			WithArgs(ID).
 			WillReturnError(sql.ErrConnDone)
 
+		h := NewApplication(db)
+
 		//Mock Echo Context
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodGet, "/expenses/"+strconv.Itoa(ID), nil)
@@ -116,7 +113,7 @@ func TestGetExpenseHandler(t *testing.T) {
 		c.SetParamNames("id")
 		c.SetParamValues(strconv.Itoa(ID))
 
-		if err = GetExpenseHandler(c); err != nil {
+		if err = h.GetExpenseHandler(c); err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
 
@@ -128,6 +125,7 @@ func TestGetExpenseHandler(t *testing.T) {
 	})
 
 	t.Run("Get expense by invalid ID should got error", func(t *testing.T) {
+		h := NewApplication(nil)
 		//Mock Echo Context
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodGet, "/expenses/a", nil)
@@ -137,7 +135,7 @@ func TestGetExpenseHandler(t *testing.T) {
 		c.SetParamNames("id")
 		c.SetParamValues("a")
 
-		if err := GetExpenseHandler(c); err != nil {
+		if err := h.GetExpenseHandler(c); err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
 
@@ -150,9 +148,7 @@ func TestGetExpenseHandler(t *testing.T) {
 
 	t.Run("Get all expense should be success", func(t *testing.T) {
 		//Mock Database
-		var mock sqlmock.Sqlmock
-		var err error
-		db, mock, err = sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -165,6 +161,7 @@ func TestGetExpenseHandler(t *testing.T) {
 		mock.ExpectPrepare("SELECT id, title, amount, note, tags FROM expenses ORDER BY id ASC").
 			ExpectQuery().
 			WillReturnRows(mockRows)
+		h := NewApplication(db)
 
 		//Mock Echo Context
 		e := echo.New()
@@ -173,7 +170,7 @@ func TestGetExpenseHandler(t *testing.T) {
 
 		c := e.NewContext(req, rec)
 
-		if err = GetExpensesHandler(c); err != nil {
+		if err = h.GetExpensesHandler(c); err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
 
@@ -186,9 +183,7 @@ func TestGetExpenseHandler(t *testing.T) {
 
 	t.Run("Get all expense should got error", func(t *testing.T) {
 		//Mock Database
-		var mock sqlmock.Sqlmock
-		var err error
-		db, mock, err = sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -198,6 +193,7 @@ func TestGetExpenseHandler(t *testing.T) {
 			ExpectQuery().
 			WillReturnError(sql.ErrConnDone)
 
+		h := NewApplication(db)
 		//Mock Echo Context
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodGet, "/expenses", nil)
@@ -205,7 +201,7 @@ func TestGetExpenseHandler(t *testing.T) {
 
 		c := e.NewContext(req, rec)
 
-		if err = GetExpensesHandler(c); err != nil {
+		if err = h.GetExpensesHandler(c); err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
 

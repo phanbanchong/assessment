@@ -9,7 +9,7 @@ import (
 	"github.com/lib/pq"
 )
 
-func InitDB() *sql.DB {
+func InitDB() (*sql.DB, error) {
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatal("Connection to database error", err)
@@ -23,7 +23,7 @@ func InitDB() *sql.DB {
 	} else {
 		log.Printf("Executed: %s", command)
 	}
-	return db
+	return db, err
 }
 
 func GetExpenseByID(db *sql.DB, id int) (Expense, error) {
