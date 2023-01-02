@@ -1,5 +1,4 @@
 //go:build unit
-// +build unit
 
 package expense
 
@@ -26,9 +25,7 @@ func TestUpdateExpenseHandler(t *testing.T) {
 			Tags:   []string{"tag1", "tag2"},
 		}
 		//Mock Database
-		var mock sqlmock.Sqlmock
-		var err error
-		db, mock, err = sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -37,6 +34,8 @@ func TestUpdateExpenseHandler(t *testing.T) {
 			ExpectExec().
 			WithArgs(exp.ID, exp.Title, exp.Amount, exp.Note, pq.Array(exp.Tags)).
 			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		h := NewApplication(db)
 
 		//Mock Echo Context
 		e := echo.New()
@@ -47,7 +46,7 @@ func TestUpdateExpenseHandler(t *testing.T) {
 		c.SetParamNames("id")
 		c.SetParamValues(strconv.Itoa(exp.ID))
 
-		if err = UpdateExpenseHandler(c); err != nil {
+		if err = h.UpdateExpenseHandler(c); err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
 
@@ -59,6 +58,7 @@ func TestUpdateExpenseHandler(t *testing.T) {
 	})
 
 	t.Run("Update expense with invalid ID should got error", func(t *testing.T) {
+		h := NewApplication(nil)
 		//Mock Echo Context
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodPut, "/expenses", strings.NewReader(ExpenseWithIDJSON))
@@ -68,7 +68,7 @@ func TestUpdateExpenseHandler(t *testing.T) {
 		c.SetParamNames("id")
 		c.SetParamValues("a")
 
-		err := UpdateExpenseHandler(c)
+		err := h.UpdateExpenseHandler(c)
 		if err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
@@ -84,6 +84,7 @@ func TestUpdateExpenseHandler(t *testing.T) {
 	})
 
 	t.Run("Update expense bad request should be fail", func(t *testing.T) {
+		h := NewApplication(nil)
 		//Mock Echo Context
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodPut, "/expenses", strings.NewReader(BadExpenseJSON))
@@ -93,7 +94,7 @@ func TestUpdateExpenseHandler(t *testing.T) {
 		c.SetParamNames("id")
 		c.SetParamValues(strconv.Itoa(3))
 
-		err := UpdateExpenseHandler(c)
+		err := h.UpdateExpenseHandler(c)
 		if err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
@@ -117,9 +118,7 @@ func TestUpdateExpenseHandler(t *testing.T) {
 			Tags:   []string{"tag1", "tag2"},
 		}
 		//Mock Database
-		var mock sqlmock.Sqlmock
-		var err error
-		db, mock, err = sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 		}
@@ -128,6 +127,8 @@ func TestUpdateExpenseHandler(t *testing.T) {
 			ExpectExec().
 			WithArgs(exp.ID, exp.Title, exp.Amount, exp.Note, pq.Array(exp.Tags)).
 			WillReturnError(sql.ErrConnDone)
+
+		h := NewApplication(db)
 
 		//Mock Echo Context
 		e := echo.New()
@@ -138,7 +139,7 @@ func TestUpdateExpenseHandler(t *testing.T) {
 		c.SetParamNames("id")
 		c.SetParamValues(strconv.Itoa(exp.ID))
 
-		err = UpdateExpenseHandler(c)
+		err = h.UpdateExpenseHandler(c)
 		if err != nil {
 			t.Errorf("should not return error but it got %v", err)
 		}
