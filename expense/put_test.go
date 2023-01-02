@@ -79,6 +79,7 @@ func TestUpdateExpenseHandler(t *testing.T) {
 			t.Errorf("response error was not expected got: %s", resp)
 		}
 	})
+
 	t.Run("Update expense bad request should be fail", func(t *testing.T) {
 		//Mock Echo Context
 		e := echo.New()
