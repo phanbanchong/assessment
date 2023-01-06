@@ -173,7 +173,7 @@ func TestUpdateExpense(t *testing.T) {
 	err = json.Unmarshal(byteBody, &exp)
 	if assert.NoError(t, err) {
 		assert.Nil(t, err)
-		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 1, exp.ID)
 		assert.Equal(t, "strawberry", exp.Title)
 		assert.Equal(t, 14.65, exp.Amount)

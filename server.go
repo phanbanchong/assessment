@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	"github.com/phanbanchong/assessment/auth"
 	"github.com/phanbanchong/assessment/expense"
 	"github.com/phanbanchong/assessment/health"
 )
@@ -37,6 +38,7 @@ func main() {
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(auth.AuthMiddleware())
 
 	e.GET("/health", health.GetHealthHandler)
 
@@ -59,4 +61,8 @@ func main() {
 	if err := e.Shutdown(ctx); err != nil {
 		e.Logger.Fatal(err)
 	}
+}
+
+func AuthMiddleware() {
+	panic("unimplemented")
 }
