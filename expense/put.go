@@ -22,5 +22,5 @@ func (h *handler) UpdateExpenseHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Error{Message: err.Error()})
 	}
-	return c.JSON(http.StatusCreated, exp)
+	return c.JSON(http.StatusOK, exp)
 }
