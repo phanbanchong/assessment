@@ -62,7 +62,3 @@ func main() {
 		e.Logger.Fatal(err)
 	}
 }
-
-func AuthMiddleware() {
-	panic("unimplemented")
-}
